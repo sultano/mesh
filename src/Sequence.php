@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Mesh;
 
-use Zend\Filter\FilterInterface;
-use Zend\Validator\ValidatorInterface;
+use Laminas\Filter\FilterInterface;
+use Laminas\Validator\ValidatorInterface;
+use SplPriorityQueue;
 
 /**
  * Class Sequence
@@ -14,9 +15,9 @@ use Zend\Validator\ValidatorInterface;
 class Sequence
 {
     /**
-     * @var \SplPriorityQueue
+     * @var SplPriorityQueue
      */
-    protected $queue;
+    protected SplPriorityQueue $queue;
 
     /**
      * @var string|int|float|bool
@@ -31,12 +32,12 @@ class Sequence
     /**
      * @var Sequence
      */
-    protected $format;
+    protected Sequence $format;
 
     /**
      * @var array
      */
-    protected $errors = [];
+    protected array $errors = [];
 
     /**
      * Sequence constructor.
@@ -44,7 +45,7 @@ class Sequence
      */
     public function __construct($value = null)
     {
-        $this->queue = new \SplPriorityQueue();
+        $this->queue = new SplPriorityQueue();
 
         if ($value !== null) {
             $this->setValue($value);
@@ -69,7 +70,6 @@ class Sequence
      */
     public function rule(string $name, array $params = []): Sequence
     {
-
 
         return $this;
     }

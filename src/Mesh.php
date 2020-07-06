@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Mesh;
 
+use InvalidArgumentException;
+use SplPriorityQueue;
+
 /**
  * Class Mesh
  * @package Mesh
@@ -13,22 +16,22 @@ class Mesh
     /**
      * @var array
      */
-    protected $dataDirty = [];
+    protected array $dataDirty = [];
 
     /**
      * @var array
      */
-    protected $dataClean = [];
+    protected array $dataClean = [];
 
     /**
      * @var array
      */
-    protected $errors = [];
+    protected array $errors = [];
 
     /**
-     * @var \SplPriorityQueue
+     * @var SplPriorityQueue
      */
-    private $queue;
+    private SplPriorityQueue $queue;
 
     /**
      * Mesh constructor.
@@ -40,7 +43,7 @@ class Mesh
             $this->dataDirty = $data;
         }
 
-        $this->queue = new \SplPriorityQueue();
+        $this->queue = new SplPriorityQueue();
     }
 
     /**
@@ -63,7 +66,7 @@ class Mesh
     public function add($key, Sequence $sequence): Mesh
     {
         if (!is_string($key) && !is_int($key)) {
-            throw new \InvalidArgumentException('Key must be a string or integer');
+            throw new InvalidArgumentException('Key must be a string or integer');
         }
 
         $this->queue->insert([$key => $sequence], 1);

@@ -10,7 +10,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Class MeshTest
- * @package Mesh
+ * @package MeshTest
  */
 final class MeshTest extends TestCase
 {
