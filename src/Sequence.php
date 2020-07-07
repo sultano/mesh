@@ -6,7 +6,9 @@ namespace Mesh;
 
 use Laminas\Filter\FilterInterface;
 use Laminas\Validator\ValidatorInterface;
-use SplPriorityQueue;
+use ReflectionClass;
+use RuntimeException;
+use SplQueue;
 
 /**
  * Class Sequence
@@ -15,9 +17,9 @@ use SplPriorityQueue;
 class Sequence
 {
     /**
-     * @var SplPriorityQueue
+     * @var SplQueue
      */
-    protected SplPriorityQueue $queue;
+    protected SplQueue $queue;
 
     /**
      * @var string|int|float|bool
@@ -45,7 +47,7 @@ class Sequence
      */
     public function __construct($value = null)
     {
-        $this->queue = new SplPriorityQueue();
+        $this->queue = new SplQueue();
 
         if ($value !== null) {
             $this->setValue($value);
@@ -70,6 +72,16 @@ class Sequence
      */
     public function rule(string $name, array $params = []): Sequence
     {
+        if (!class_exists($name)) {
+            throw new RuntimeException('Unknown validator');
+        }
+
+        $reflectionClass = new ReflectionClass($name);
+        if (!key_exists(ValidatorInterface::class, $reflectionClass->getInterfaces())) {
+            throw new RuntimeException('Unknown validator');
+        }
+
+        $this->queue->enqueue(new $name());
 
         return $this;
     }
@@ -80,6 +92,16 @@ class Sequence
      */
     public function filter(string $name): Sequence
     {
+        if (!class_exists($name)) {
+            throw new RuntimeException('Unknown filter');
+        }
+
+        $reflectionClass = new ReflectionClass($name);
+        if (!key_exists(FilterInterface::class, $reflectionClass->getInterfaces())) {
+            throw new RuntimeException('Unknown filter');
+        }
+
+        $this->queue->enqueue(new $name());
 
         return $this;
     }
@@ -97,7 +119,7 @@ class Sequence
 
         // Check we don't have a NULL value
         if ($this->value === null) {
-            throw new \RuntimeException('Value must be supplied');
+            throw new RuntimeException('Value must be supplied');
         }
 
         // Nothing in the queue!
@@ -105,7 +127,7 @@ class Sequence
             return true;
         }
 
-        $success = false;
+        $success = true;
         foreach ($this->queue as $item) {
             // Filter
             if ($item instanceof FilterInterface) {
@@ -114,11 +136,13 @@ class Sequence
 
             // Sequence
             if ($item instanceof Sequence && !$item->run($this->valueClean)) {
+                $success = false;
                 $this->addErrors($item->getErrors());
             }
 
             // Rule
             if ($item instanceof ValidatorInterface && !$item->isValid($this->valueClean)) {
+                $success = false;
                 $this->addErrors($item->getMessages());
             }
         }
