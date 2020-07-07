@@ -68,7 +68,8 @@ class Sequence
     /**
      * @param string $name
      * @param array $params
-     * @return Sequence
+     * @return $this
+     * @throws ReflectionException
      */
     public function rule(string $name, array $params = []): Sequence
     {
@@ -88,7 +89,8 @@ class Sequence
 
     /**
      * @param string $name
-     * @return Sequence
+     * @return $this
+     * @throws ReflectionException
      */
     public function filter(string $name): Sequence
     {
@@ -115,11 +117,6 @@ class Sequence
         // Set value
         if ($value !== null) {
             $this->setValue($value);
-        }
-
-        // Check we don't have a NULL value
-        if ($this->value === null) {
-            throw new RuntimeException('Value must be supplied');
         }
 
         // Nothing in the queue!

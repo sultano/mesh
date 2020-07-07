@@ -126,7 +126,7 @@ class Mesh
                 $this->dataClean[$key] = $item->getValueClean();
             } else {
                 // Add errors
-                $this->addErrors($item->getErrors());
+                $this->addErrors([$key => $item->getErrors()]);
             }
         }
 
