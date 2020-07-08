@@ -82,7 +82,7 @@ class Sequence
             throw new RuntimeException('Unknown validator');
         }
 
-        $this->queue->enqueue(new $name());
+        $this->queue->enqueue(new $name($params));
 
         return $this;
     }
