@@ -34,6 +34,11 @@ class Mesh
     private SplQueue $queue;
 
     /**
+     * @var bool
+     */
+    private bool $isValidated = false;
+
+    /**
      * Mesh constructor.
      * @param array $data
      */
@@ -67,11 +72,11 @@ class Mesh
     }
 
     /**
-     * @return array
+     * @return array|bool
      */
-    public function getDataClean(): array
+    public function getDataClean()
     {
-        return $this->dataClean;
+        return $this->isValidated && !$this->hasErrors() ? $this->dataClean : false;
     }
 
     /**
@@ -99,11 +104,11 @@ class Mesh
     }
 
     /**
-     * @return array
+     * @return array|bool
      */
     public function getErrors()
     {
-        return $this->errors;
+        return $this->isValidated ? $this->errors : false;
     }
 
     /**
@@ -111,6 +116,8 @@ class Mesh
      */
     public function validate(): bool
     {
+        $this->isValidated = true;
+
         // No sequences given
         if ($this->queue->isEmpty()) {
             return true;
@@ -120,6 +127,7 @@ class Mesh
             $key = key($arr);
             /** @var Sequence $item */
             $item = $arr[$key];
+            $item->setContext($this->getDataDirty());
 
             if ($item->run($this->dataDirty[$key])) {
                 // Set clean value

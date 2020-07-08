@@ -32,9 +32,9 @@ class Sequence
     protected $valueClean;
 
     /**
-     * @var Sequence
+     * @var array|null
      */
-    protected Sequence $format;
+    protected ?array $context;
 
     /**
      * @var array
@@ -55,12 +55,12 @@ class Sequence
     }
 
     /**
-     * @param Sequence $format
+     * @param array|null $context
      * @return Sequence
      */
-    public function setFormat(Sequence $format): Sequence
+    public function setContext(?array $context): Sequence
     {
-        $this->format = $format;
+        $this->context = $context;
 
         return $this;
     }
@@ -109,6 +109,18 @@ class Sequence
     }
 
     /**
+     * @param callable $callback
+     * @param string|null $error
+     * @return $this
+     */
+    public function callback(callable $callback, ?string $error = null): Sequence
+    {
+        $this->queue->enqueue(new Closure($callback, $error));
+
+        return $this;
+    }
+
+    /**
      * @param null $value
      * @return bool
      */
@@ -129,18 +141,41 @@ class Sequence
             // Filter
             if ($item instanceof FilterInterface) {
                 $this->valueClean = $item->filter($this->valueClean);
+                continue;
             }
 
             // Sequence
-            if ($item instanceof Sequence && !$item->run($this->valueClean)) {
-                $success = false;
-                $this->addErrors($item->getErrors());
+            if ($item instanceof Sequence) {
+                $success = $item->run($this->valueClean);
+                if (!$success) {
+                    $this->addErrors($item->getMessages());
+                }
+
+                continue;
             }
 
             // Rule
-            if ($item instanceof ValidatorInterface && !$item->isValid($this->valueClean)) {
-                $success = false;
-                $this->addErrors($item->getMessages());
+            if ($item instanceof ValidatorInterface) {
+                $success = $item->isValid($this->valueClean);
+                if (!$success) {
+                    $this->addErrors($item->getMessages());
+                }
+
+                continue;
+            }
+
+            // Callback
+            if (is_callable($item)) {
+                /** @var Closure $item */
+                $value = $item($this->valueClean, $this->context);
+                if ($value === false && $item->getError()) {
+                    $success = false;
+                    $this->addErrors(['__CALLBACK__' => $item->getError()]);
+                } else {
+                    $this->valueClean = $value;
+                }
+
+                continue;
             }
         }
 
