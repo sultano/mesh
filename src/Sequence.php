@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Mesh;
 
+use ArrayObject;
 use Closure;
 use Laminas\Filter\FilterInterface;
 use Laminas\Validator\ValidatorInterface;
 use Mesh\Closure as ClosureDecorator;
 use ReflectionClass;
 use RuntimeException;
-use SplQueue;
 
 /**
  * Class Sequence
@@ -19,9 +19,9 @@ use SplQueue;
 class Sequence
 {
     /**
-     * @var SplQueue
+     * @var ArrayObject
      */
-    protected SplQueue $queue;
+    protected ArrayObject $queue;
 
     /**
      * @var string|int|float|bool
@@ -49,7 +49,7 @@ class Sequence
      */
     public function __construct($value = null)
     {
-        $this->queue = new SplQueue();
+        $this->queue = new ArrayObject();
 
         if ($value !== null) {
             $this->setValue($value);
@@ -84,7 +84,7 @@ class Sequence
             throw new RuntimeException('Unknown validator');
         }
 
-        $this->queue->enqueue(new $name($params));
+        $this->queue->append(new $name($params));
 
         return $this;
     }
@@ -105,7 +105,7 @@ class Sequence
             throw new RuntimeException('Unknown filter');
         }
 
-        $this->queue->enqueue(new $name());
+        $this->queue->append(new $name());
 
         return $this;
     }
@@ -117,7 +117,7 @@ class Sequence
      */
     public function callback(Closure $closure, ?string $error = null): Sequence
     {
-        $this->queue->enqueue(new ClosureDecorator($closure, $error));
+        $this->queue->append(new ClosureDecorator($closure, $error));
 
         return $this;
     }
@@ -134,7 +134,7 @@ class Sequence
         }
 
         // Nothing in the queue!
-        if ($this->queue->isEmpty()) {
+        if ($this->queue->count() === 0) {
             return true;
         }
 

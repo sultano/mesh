@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Mesh;
 
+use ArrayObject;
 use InvalidArgumentException;
-use SplQueue;
 
 /**
  * Class Mesh
@@ -29,9 +29,9 @@ class Mesh
     protected array $errors = [];
 
     /**
-     * @var SplQueue
+     * @var ArrayObject
      */
-    private SplQueue $queue;
+    private ArrayObject $queue;
 
     /**
      * @var bool
@@ -48,7 +48,7 @@ class Mesh
             $this->setData($data);
         }
 
-        $this->queue = new SplQueue();
+        $this->queue = new ArrayObject();
     }
 
     /**
@@ -90,9 +90,18 @@ class Mesh
             throw new InvalidArgumentException('Key must be a string or integer');
         }
 
-        $this->queue->enqueue([$key => $sequence]);
+        $this->queue->offsetSet($key, $sequence);
 
         return $this;
+    }
+
+    /**
+     * @param $key
+     * @return Sequence|null
+     */
+    public function get($key): ?Sequence
+    {
+        return $this->queue->offsetGet($key);
     }
 
     /**
@@ -119,14 +128,12 @@ class Mesh
         $this->isValidated = true;
 
         // No sequences given
-        if ($this->queue->isEmpty()) {
+        if ($this->queue->count() === 0) {
             return true;
         }
 
-        foreach ($this->queue as $arr) {
-            $key = key($arr);
-            /** @var Sequence $item */
-            $item = $arr[$key];
+        /** @var Sequence $item */
+        foreach ($this->queue as $key => $item) {
             $item->setContext($this->getDataDirty());
 
             if ($item->run($this->dataDirty[$key])) {
