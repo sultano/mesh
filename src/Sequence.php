@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Mesh;
 
+use Closure;
 use Laminas\Filter\FilterInterface;
 use Laminas\Validator\ValidatorInterface;
+use Mesh\Closure as ClosureDecorator;
 use ReflectionClass;
 use RuntimeException;
 use SplQueue;
@@ -109,13 +111,13 @@ class Sequence
     }
 
     /**
-     * @param callable $callback
+     * @param Closure $closure
      * @param string|null $error
      * @return $this
      */
-    public function callback(callable $callback, ?string $error = null): Sequence
+    public function callback(Closure $closure, ?string $error = null): Sequence
     {
-        $this->queue->enqueue(new Closure($callback, $error));
+        $this->queue->enqueue(new ClosureDecorator($closure, $error));
 
         return $this;
     }
@@ -165,8 +167,7 @@ class Sequence
             }
 
             // Callback
-            if (is_callable($item)) {
-                /** @var Closure $item */
+            if ($item instanceof Closure) {
                 $value = $item($this->valueClean, $this->context);
                 if ($value === false && $item->getError()) {
                     $success = false;
@@ -174,8 +175,6 @@ class Sequence
                 } else {
                     $this->valueClean = $value;
                 }
-
-                continue;
             }
         }
 
