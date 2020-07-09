@@ -11,6 +11,11 @@ namespace Mesh;
 final class Closure
 {
     /**
+     * @var string
+     */
+    private string $name;
+
+    /**
      * @var \Closure
      */
     private \Closure $closure;
@@ -22,13 +27,53 @@ final class Closure
 
     /**
      * Closure constructor.
+     * @param string $name
      * @param \Closure $closure
      * @param string|null $error
      */
-    public function __construct(\Closure $closure, ?string $error = null)
+    public function __construct(string $name, \Closure $closure, ?string $error = null)
     {
+        $this->name = $name;
         $this->closure = $closure;
         $this->error = $error;
+    }
+
+    /**
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param string $name
+     * @return Closure
+     */
+    public function setName(string $name): Closure
+    {
+        $this->name = $name;
+
+        return $this;
+    }
+
+    /**
+     * @return \Closure
+     */
+    public function getClosure(): \Closure
+    {
+        return $this->closure;
+    }
+
+    /**
+     * @param \Closure $closure
+     * @return Closure
+     */
+    public function setClosure(\Closure $closure): Closure
+    {
+        $this->closure = $closure;
+
+        return $this;
     }
 
     /**

@@ -111,13 +111,14 @@ class Sequence
     }
 
     /**
+     * @param string $name
      * @param Closure $closure
      * @param string|null $error
      * @return $this
      */
-    public function callback(Closure $closure, ?string $error = null): Sequence
+    public function callback(string $name, Closure $closure, ?string $error = null): Sequence
     {
-        $this->queue->append(new ClosureDecorator($closure, $error));
+        $this->queue->append(new ClosureDecorator($name, $closure, $error));
 
         return $this;
     }
@@ -167,11 +168,11 @@ class Sequence
             }
 
             // Callback
-            if ($item instanceof Closure) {
+            if ($item instanceof ClosureDecorator) {
                 $value = $item($this->valueClean, $this->context);
                 if ($value === false && $item->getError()) {
                     $success = false;
-                    $this->addErrors(['__CALLBACK__' => $item->getError()]);
+                    $this->addErrors([$item->getName() => $item->getError()]);
                 } else {
                     $this->valueClean = $value;
                 }
