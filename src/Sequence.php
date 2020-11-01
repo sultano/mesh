@@ -6,6 +6,7 @@ namespace Mesh;
 
 use ArrayObject;
 use Closure;
+use Exception;
 use Laminas\Filter\FilterInterface;
 use Laminas\Validator\ValidatorInterface;
 use Mesh\Closure as ClosureDecorator;
@@ -39,6 +40,21 @@ class Sequence
     protected ?array $context;
 
     /**
+     * @var bool
+     */
+    protected bool $fail = false;
+
+    /**
+     * @var string|null
+     */
+    protected ?string $failureError = null;
+
+    /**
+     * @var bool
+     */
+    protected bool $break = false;
+
+    /**
      * @var array
      */
     protected array $errors = [];
@@ -57,6 +73,14 @@ class Sequence
     }
 
     /**
+     * @return array|null
+     */
+    public function getContext(): ?array
+    {
+        return $this->context;
+    }
+
+    /**
      * @param array|null $context
      * @return Sequence
      */
@@ -71,15 +95,15 @@ class Sequence
      * @param string $name
      * @param array $params
      * @return $this
-     * @throws ReflectionException
      */
     public function rule(string $name, array $params = []): Sequence
     {
-        if (!class_exists($name)) {
+        try {
+            $reflectionClass = new ReflectionClass($name);
+        } catch(Exception $e) {
             throw new RuntimeException('Unknown validator');
         }
 
-        $reflectionClass = new ReflectionClass($name);
         if (!key_exists(ValidatorInterface::class, $reflectionClass->getInterfaces())) {
             throw new RuntimeException('Unknown validator');
         }
@@ -92,15 +116,15 @@ class Sequence
     /**
      * @param string $name
      * @return $this
-     * @throws ReflectionException
      */
     public function filter(string $name): Sequence
     {
-        if (!class_exists($name)) {
+        try {
+            $reflectionClass = new ReflectionClass($name);
+        } catch(Exception $e) {
             throw new RuntimeException('Unknown filter');
         }
 
-        $reflectionClass = new ReflectionClass($name);
         if (!key_exists(FilterInterface::class, $reflectionClass->getInterfaces())) {
             throw new RuntimeException('Unknown filter');
         }
@@ -113,12 +137,11 @@ class Sequence
     /**
      * @param string $name
      * @param Closure $closure
-     * @param string|null $error
      * @return $this
      */
-    public function callback(string $name, Closure $closure, ?string $error = null): Sequence
+    public function callback(string $name, Closure $closure): Sequence
     {
-        $this->queue->append(new ClosureDecorator($name, $closure, $error));
+        $this->queue->append(new ClosureDecorator($name, $closure));
 
         return $this;
     }
@@ -141,6 +164,11 @@ class Sequence
 
         $success = true;
         foreach ($this->queue as $item) {
+            // Exit sequence
+            if ($this->break) {
+                break;
+            }
+
             // Filter
             if ($item instanceof FilterInterface) {
                 $this->valueClean = $item->filter($this->valueClean);
@@ -169,11 +197,18 @@ class Sequence
 
             // Callback
             if ($item instanceof ClosureDecorator) {
-                $value = $item($this->valueClean, $this->context);
-                if ($value === false && $item->getError()) {
+                $value = $item($this->valueClean, $this);
+                if ($this->fail) {
                     $success = false;
-                    $this->addErrors([$item->getName() => $item->getError()]);
-                } else {
+
+                    if ($this->failureError) {
+                        $this->addErrors([$item->getName() => $this->failureError]);
+                    }
+
+                    // Reset failure
+                    $this->fail = false;
+                    $this->failureError = null;
+                } elseif ($value !== null) {
                     $this->valueClean = $value;
                 }
             }
@@ -215,6 +250,54 @@ class Sequence
     public function getErrors(): array
     {
         return $this->errors;
+    }
+
+    /**
+     * Break sequence
+     *
+     * @return null
+     */
+    public function break()
+    {
+        $this->break = true;
+
+        return null;
+    }
+
+    /**
+     * Continue sequence
+     *
+     * @return null
+     */
+    public function continue()
+    {
+        $this->break = false;
+
+        return null;
+    }
+
+    /**
+     * @param string|null $error
+     * @return $this
+     */
+    public function fail(string $error = null): Sequence
+    {
+        $this->fail = true;
+        $this->failureError = $error;
+        $this->break = true;
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function failAndContinue(string $error = null): Sequence
+    {
+        $this->fail = true;
+        $this->failureError = $error;
+
+        return $this;
     }
 
     /**

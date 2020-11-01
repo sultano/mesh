@@ -21,21 +21,14 @@ final class Closure
     private \Closure $closure;
 
     /**
-     * @var string|null
-     */
-    private ?string $error;
-
-    /**
      * Closure constructor.
      * @param string $name
      * @param \Closure $closure
-     * @param string|null $error
      */
-    public function __construct(string $name, \Closure $closure, ?string $error = null)
+    public function __construct(string $name, \Closure $closure)
     {
         $this->name = $name;
         $this->closure = $closure;
-        $this->error = $error;
     }
 
     /**
@@ -77,25 +70,6 @@ final class Closure
     }
 
     /**
-     * @return string|null
-     */
-    public function getError(): ?string
-    {
-        return $this->error;
-    }
-
-    /**
-     * @param string|null $error
-     * @return $this
-     */
-    public function setError(?string $error): Closure
-    {
-        $this->error = $error;
-
-        return $this;
-    }
-
-    /**
      * Duplicates the closure with a new bound object and class scope
      * @link https://secure.php.net/manual/en/closure.bindto.php
      * @param object $newthis The object to which the given anonymous function should be bound, or NULL for the closure to be unbound.
@@ -122,6 +96,8 @@ final class Closure
     }
 
     /**
+     * @param string|int|float|bool $value
+     * @param array|null $context
      * @param mixed ...$parameters
      * @return mixed
      */
