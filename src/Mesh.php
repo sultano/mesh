@@ -136,7 +136,7 @@ class Mesh
         foreach ($this->queue as $key => $item) {
             $item->setContext($this->getDataDirty());
 
-            if (isset($this->dataDirty[$key]) && $item->run($this->dataDirty[$key])) {
+            if ($item->run($this->dataDirty[$key] ?? null)) {
                 // Set clean value
                 $this->dataClean[$key] = $item->getValueClean();
             } else {
